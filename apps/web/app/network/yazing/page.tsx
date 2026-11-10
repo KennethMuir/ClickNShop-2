@@ -69,10 +69,10 @@ export default function YazingPage() {
             publisherId: "KennethMuiruri",
           },
           {
-            name: "Fanttik",
-            slug: "fanttik",
-            description: "Innovative tools and electronic accessories.",
-            destinationUrl: "/api/v1/go/fanttik",
+            name: "Fire Maple Gear",
+            slug: "firemaplegear",
+            description: "Portable camping stoves, cookware and outdoor cooking equipment.",
+            destinationUrl: "https://yazing.com/deals/firemaplegear/KennethMuiruri",
             publisherId: "KennethMuiruri",
           },
           {

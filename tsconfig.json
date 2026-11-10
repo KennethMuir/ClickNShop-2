@@ -7,11 +7,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "rootDir": "./src",
-    "resolveJsonModule": true,
-    "declaration": true,
-    "sourceMap": true
+    "rootDir": "./src"
   },
-  "include": ["src/**/*", "next-config.js"],
-  "exclude": ["node_modules", ".next"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -2,163 +2,13 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import Image from "next/image"
 import { ShoppingBag } from "lucide-react"
+import { merchants } from "../data/merchants"
 
 export const metadata: Metadata = {
   title: "ClickNShop – Brands",
   description:
     "Browse verified brands and merchants across fashion, electronics, travel, wellness and more.",
 }
-
-type Merchant = {
-  name: string
-  slug: string
-  category: string
-  description: string
-  logo: string
-}
-
-const merchants: Merchant[] = [
-  {
-    name: "FansEdge",
-    slug: "fansedge",
-    category: "Fashion & Apparel",
-    description: "Sports apparel, fan gear and merchandise.",
-    logo: "/fansedge-logo.webp",
-  },
-  {
-    name: "SHEIN",
-    slug: "shein",
-    category: "Fashion & Apparel",
-    description: "Fashion, accessories and lifestyle collections.",
-    logo: "/shein-logo.webp",
-  },
-  {
-    name: "Athleta",
-    slug: "athleta",
-    category: "Fashion & Apparel",
-    description: "Activewear and performance clothing.",
-    logo: "/athleta-logo.webp",
-  },
-  {
-    name: "Columbia",
-    slug: "columbia",
-    category: "Fashion & Apparel",
-    description: "Outdoor clothing, footwear and equipment.",
-    logo: "/columbia-logo.webp",
-  },
-  {
-    name: "ABT",
-    slug: "abt",
-    category: "Electronics & Technology",
-    description: "Electronics, appliances and technology.",
-    logo: "/abt-logo.webp",
-  },
-  {
-    name: "Fanttik",
-    slug: "fanttik",
-    category: "Electronics & Technology",
-    description: "Innovative tools and electronic accessories.",
-    logo: "/fanttik-logo.webp",
-  },
-  {
-    name: "HostGator",
-    slug: "hostgator",
-    category: "Software & Business",
-    description: "Web hosting and online business services.",
-    logo: "/hostgator-logo.webp",
-  },
-  {
-    name: "CyberGhost VPN",
-    slug: "cyberghostvpn",
-    category: "Software & Business",
-    description: "Online privacy and VPN services.",
-    logo: "/cyberghostvpn-logo.webp",
-  },
-  {
-    name: "Homebase",
-    slug: "joinhomebase",
-    category: "Software & Business",
-    description: "Employee scheduling and workforce tools.",
-    logo: "/homebase-logo.webp",
-  },
-  {
-    name: "AmigoSIM",
-    slug: "amigosim",
-    category: "Mobile & Connectivity",
-    description: "Mobile connectivity and SIM services.",
-    logo: "/amigosim-logo.webp",
-  },
-  {
-    name: "Consumer Cellular",
-    slug: "consumercellular",
-    category: "Mobile & Connectivity",
-    description: "Mobile plans and wireless services.",
-    logo: "/consumercellular-logo.webp",
-  },
-  {
-    name: "Priceline",
-    slug: "priceline",
-    category: "Travel & Transport",
-    description: "Travel bookings and accommodation.",
-    logo: "/priceline-logo.webp",
-  },
-  {
-    name: "Budget",
-    slug: "budget",
-    category: "Travel & Transport",
-    description: "Car rental and travel transportation.",
-    logo: "/budget-logo.webp",
-  },
-  {
-    name: "Hill's Pet",
-    slug: "hillspet",
-    category: "Pets & Animals",
-    description: "Pet nutrition and food products.",
-    logo: "/hillspet-logo.webp",
-  },
-  {
-    name: "PetCareSupplies",
-    slug: "petcaresupplies",
-    category: "Pets & Animals",
-    description: "Pet care products and supplies.",
-    logo: "/petcaresupplies-logo.webp",
-  },
-  {
-    name: "BODi",
-    slug: "bodi",
-    category: "Health & Wellness",
-    description: "Fitness and wellness programmes.",
-    logo: "/bodi-logo.webp",
-  },
-  {
-    name: "EcoWise Vitamins",
-    slug: "ecowisevitamins",
-    category: "Health & Wellness",
-    description: "Vitamins and wellness products.",
-    logo: "/ecowisevitamins-logo.webp",
-  },
-  {
-    name: "GiftCards.com",
-    slug: "giftcards.com",
-    category: "Entertainment & Gifts",
-    description: "Gift cards and gifting options.",
-    logo: "/giftcards.com-logo.webp",
-  },
-  {
-    name: "StubHub",
-    slug: "stubhub",
-    category: "Entertainment & Gifts",
-    description: "Tickets for live events and entertainment.",
-    logo: "/stubhub-logo.webp",
-  },
-  {
-    name: "Gardenreet",
-    slug: "gardenreet",
-    category: "Home & Lifestyle",
-    description: "Home and lifestyle shopping.",
-    logo: "/gardenreet-logo.webp",
-  },
-]
 
 type Brand = {
   name: string
@@ -250,6 +100,56 @@ const brands: Brand[] = [
    category so visitors can browse the associated merchants.
    ========================================================== */
 
+
+function MerchantDirectory() {
+  return (
+    <section className="mb-14">
+      <div className="mb-6">
+        <h2 className="text-2xl font-extrabold text-slate-950">
+          All merchants
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Explore all {merchants.length} merchants currently listed on ClickNShop.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {merchants.map((merchant) => (
+          <a
+            key={merchant.slug}
+            href={merchant.destinationUrl}
+            target="_blank"
+            rel="sponsored nofollow noopener noreferrer"
+            className="flex min-h-36 flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-4 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+          >
+            <div className="flex h-14 w-full items-center justify-center">
+              {merchant.logo ? (
+                <Image
+                  src={merchant.logo}
+                  alt={`${merchant.name} logo`}
+                  width={190}
+                  height={60}
+                  unoptimized
+                  className="max-h-12 max-w-[160px] object-contain"
+                />
+              ) : (
+                <span className="text-lg font-extrabold text-slate-800">
+                  {merchant.name}
+                </span>
+              )}
+            </div>
+            <h3 className="mt-3 text-sm font-bold text-slate-900">
+              {merchant.name}
+            </h3>
+            <p className="mt-1 text-xs text-slate-500">
+              {merchant.category}
+            </p>
+          </a>
+        ))}
+      </div>
+    </section>
+  )
+}
 function BrandsGrid() {
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -326,6 +226,8 @@ export default function BrandsPage() {
             showcases the merchants that match your interest.
           </p>
         </div>
+
+        <MerchantDirectory />
 
         <BrandsGrid />
 

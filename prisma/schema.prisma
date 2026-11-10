@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -60,20 +61,20 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  refreshSessions RefreshSession[]
+  refreshSessions       RefreshSession[]
   advertiserApplications AdvertiserApplication[]
-  auditLogs       AuditLog[]
-
-  @@ index([email])
+  auditLogs             AuditLog[]
+  clickEvents           ClickEvent[]
+  conversions           Conversion[]
 }
 
 model RefreshSession {
-  id           String   @id @default(uuid())
-  userId       String   @unique
-  token        String   @unique
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  revokedAt    DateTime?
+  id        String    @id @default(uuid())
+  userId    String    @unique
+  token     String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -82,23 +83,6 @@ model RefreshSession {
 // AFFILIATE CATALOGUE
 // ============================================
 
-enum Category {
-  FASHION_AND_APParel
-  ELECTRONICS_AND_TECHNOLOGY
-  SOFTWARE_AND_BUSINESS
-  MOBILE_AND_CONNECTIVITY
-  TRAVEL_AND_TRANSPORT
-  PETS_AND_ANIMALS
-  HEALTH_AND_WELLNESS
-  ENTERTAINMENT_AND_GIFTS
-  HOME_AND_LIFESTYLE
-}
-
-enum AffiliateNetwork {
-  YAZING
-  // Additional networks can be added
-}
-
 enum MerchantStatus {
   ACTIVE
   SUSPENDED
@@ -106,73 +90,96 @@ enum MerchantStatus {
 }
 
 model AffiliateNetwork {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  baseUrl     String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  baseUrl   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   affiliatePrograms AffiliateProgram[]
+  merchants         Merchant[]
 }
 
 model AffiliateProgram {
-  id               String    @id @default(uuid())
-  networkId        String    @db.ForeignKey(AffiliateNetwork)
-  network          AffiliateNetwork @relation(fields: [networkId], references: [id])
-  programName      String
+  id                 String   @id @default(uuid())
+  networkId          String
+  programName        String
   trackingParameters Json?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
+  network       AffiliateNetwork @relation(fields: [networkId], references: [id])
   affiliateLinks AffiliateLink[]
+  offers        Offer[]
+
+  @@index([networkId])
 }
 
 model AffiliateLink {
-  id               String    @id @default(uuid())
-  programId        String    @db.ForeignKey(AffiliateProgram)
-  program          AffiliateProgram @relation(fields: [programId], references: [id])
-  merchantSlug     String
-  destinationUrl   String
-  category         Category
-  status           MerchantStatus @default(ACTIVE)
-  logoUrl          String?
-  imageUrl         String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id             String         @id @default(uuid())
+  programId      String
+  merchantId     String?
+  merchantSlug   String
+  destinationUrl String
+  categoryId     String?
+  status         MerchantStatus @default(ACTIVE)
+  logoUrl        String?
+  imageUrl       String?
+  clickCount     Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
-  @@ unique(programId, merchantSlug)
-  @@ index([programId])
-  @@ index([category])
-  @@ index([status])
+  program     AffiliateProgram @relation(fields: [programId], references: [id])
+  merchant    Merchant?        @relation(fields: [merchantId], references: [id])
+  category    Category?        @relation(fields: [categoryId], references: [id])
+  clickEvents ClickEvent[]
+
+  @@unique([programId, merchantSlug])
+  @@index([programId])
+  @@index([merchantId])
+  @@index([categoryId])
+  @@index([status])
 }
 
 model Category {
-  id          String    @id @default(uuid())
-  name        String    @unique
-  slug        String    @unique
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
   description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  merchants Merchant[]
+  merchants     Merchant[]
+  affiliateLinks AffiliateLink[]
+  offers        Offer[]
 }
 
 model Merchant {
-  id               String    @id @default(uuid())
-  name             String
-  slug             String    @unique
-  description      String?
-  categoryId       String    @db.ForeignKey(Category)
-  category         Category   @relation(fields: [categoryId], references: [id])
-  affiliateNetworkId String @db.ForeignKey(AffiliateNetwork)
-  affiliateNetwork AffiliateNetwork @relation(fields: [affiliateNetworkId], references: [id])
-  status           MerchantStatus @default(ACTIVE)
-  logoUrl          String?
-  imageUrl         String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                 String        @id @default(uuid())
+  name               String
+  slug               String        @unique
+  description        String?
+  categoryId         String
+  affiliateNetworkId String
+  status             MerchantStatus @default(ACTIVE)
+  logoUrl            String?
+  imageUrl           String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-  affiliateLinks AffiliateLink[]
+  category         Category         @relation(fields: [categoryId], references: [id])
+  affiliateNetwork AffiliateNetwork  @relation(fields: [affiliateNetworkId], references: [id])
+  affiliateLinks   AffiliateLink[]
+  offers           Offer[]
+  clickEvents      ClickEvent[]
+  impressionEvents ImpressionEvent[]
+  conversions      Conversion[]
+  commissions      AffiliateCommission[]
+
+  @@index([categoryId])
+  @@index([affiliateNetworkId])
+  @@index([status])
 }
 
 // ============================================
@@ -193,29 +200,35 @@ enum OfferFeatured {
 }
 
 model Offer {
-  id               String    @id @default(uuid())
-  title            String
-  slug             String    @unique
-  description      String?
-  merchantId       String    @db.ForeignKey(Merchant)
-  merchant         Merchant   @relation(fields: [merchantId], references: [id])
-  categoryId       String    @db.ForeignKey(Category)
-  category         Category   @relation(fields: [categoryId], references: [id])
-  affiliateProgramId String @db.ForeignKey(AffiliateProgram)
-  affiliateProgram AffiliateProgram @relation(fields: [affiliateProgramId], references: [id])
-  status           OfferStatus @default(ACTIVE)
-  featured         OfferFeatured @default(NO)
-  expiryDate       DateTime?
-  clickCount       Int       @default(0)
-  impressionCount  Int       @default(0)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                String        @id @default(uuid())
+  title             String
+  slug              String        @unique
+  description       String?
+  merchantId        String
+  categoryId        String
+  affiliateProgramId String
+  status            OfferStatus   @default(ACTIVE)
+  featured          OfferFeatured @default(NO)
+  expiryDate        DateTime?
+  clickCount        Int           @default(0)
+  impressionCount   Int           @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  @@ index([merchantId])
-  @@ index([categoryId])
-  @@ index([affiliateProgramId])
-  @@ index([status])
-  @@ index([featured])
+  merchant         Merchant         @relation(fields: [merchantId], references: [id])
+  category         Category         @relation(fields: [categoryId], references: [id])
+  affiliateProgram AffiliateProgram @relation(fields: [affiliateProgramId], references: [id])
+
+  clickEvents      ClickEvent[]
+  impressionEvents ImpressionEvent[]
+  conversions      Conversion[]
+  commissions      AffiliateCommission[]
+
+  @@index([merchantId])
+  @@index([categoryId])
+  @@index([affiliateProgramId])
+  @@index([status])
+  @@index([featured])
 }
 
 // ============================================
@@ -227,7 +240,6 @@ enum AdvertiserStatus {
   APPROVED
   SUSPENDED
   REJECTED
-
   APPLICATION_SUBMITTED
   APPLICATION_REVIEWED
 }
@@ -239,37 +251,47 @@ enum ApplicationReviewStatus {
 }
 
 model Advertiser {
-  id                String    @id @default(uuid())
-  companyName       String
-  contactPerson     String
-  businessEmail     String    @unique
-  telephone         String?
-  website           String?
+  id                  String                @id @default(uuid())
+  companyName         String
+  contactPerson       String
+  businessEmail       String                @unique
+  telephone           String?
+  website             String?
   businessDescription String?
-  billingDetails    Json?
-  verificationInfo  Json?
-  status            AdvertiserStatus @default(PENDING)
-  applicationReview ApplicationReviewStatus @default(APPLICATION_SUBMITTED)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  billingDetails      Json?
+  verificationInfo    Json?
+  status              AdvertiserStatus      @default(PENDING)
+  applicationReview   ApplicationReviewStatus @default(PENDING)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
 
-  campaigns Campaign[]
-  invoices    Invoice[]
+  applications       AdvertiserApplication[]
+  campaigns          Campaign[]
+  invoices            Invoice[]
+  clickEvents         ClickEvent[]
+  impressionEvents    ImpressionEvent[]
+  conversions         Conversion[]
+  affiliateCommissions AffiliateCommission[]
 }
 
 model AdvertiserApplication {
-  id               String    @id @default(uuid())
-  advertiserId     String    @db.ForeignKey(Advertiser)
-  advertiser       Advertiser @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
-  status           ApplicationReviewStatus @default(PENDING)
-  submittedAt      DateTime  @default(now())
-  reviewedAt       DateTime?
-  reviewerId       String?   @db.ForeignKey(User)
-  reviewedBy       User?     @relation(fields: [reviewerId], references: [id])
-  reviewNotes      String?
-  documents        Json?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id          String                 @id @default(uuid())
+  advertiserId String
+  status      ApplicationReviewStatus @default(PENDING)
+  submittedAt DateTime               @default(now())
+  reviewedAt  DateTime?
+  reviewerId  String?
+  reviewNotes String?
+  documents   Json?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  advertiser Advertiser @relation(fields: [advertiserId], references: [id], onDelete: Cascade)
+  reviewedBy User?      @relation(fields: [reviewerId], references: [id])
+
+  @@index([advertiserId])
+  @@index([reviewerId])
+  @@index([status])
 }
 
 // ============================================
@@ -289,18 +311,21 @@ enum BillingInterval {
 }
 
 model AdvertisingPackage {
-  id               String    @id @default(uuid())
-  name             String
-  description      String
-  price            Decimal   @db.Decimal(12, 2)
-  billingInterval  BillingInterval
-  status           PackageStatus @default(ACTIVE)
-  placementEligibility Json?   // e.g., ["homepage-banner", "featured-brand"]
-  campaignDuration Int?      // in days
-  impressionLimit  Int?
-  clickLimit       Int?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                   String          @id @default(uuid())
+  name                 String
+  description          String
+  price                Decimal         @PostgreSQL.Decimal(12, 2)
+  billingInterval      BillingInterval
+  status               PackageStatus   @default(ACTIVE)
+  placementEligibility Json?
+  campaignDuration     Int?
+  impressionLimit      Int?
+  clickLimit           Int?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  campaigns Campaign[]
+  invoices  Invoice[]
 }
 
 // ============================================
@@ -324,29 +349,37 @@ enum CampaignObjective {
 }
 
 model Campaign {
-  id               String    @id @default(uuid())
-  advertiserId     String    @db.ForeignKey(Advertiser)
-  advertiser       Advertiser @relation(fields: [advertiserId], references: [id])
-  packageId        String    @db.ForeignKey(AdvertisingPackage)
-  package          AdvertisingPackage @relation(fields: [packageId], references: [id])
+  id               String            @id @default(uuid())
+  advertiserId     String
+  packageId        String
   name             String
   description      String?
   objective        CampaignObjective
-  status           CampaignStatus @default(DRAFT)
-  placement        String?   // e.g., "homepage-banner", "featured-offer"
+  status           CampaignStatus    @default(DRAFT)
+  placement        String?
   startDate        DateTime
   endDate          DateTime
-  budget           Decimal   @db.Decimal(12, 2)
-  spent            Decimal   @db.Decimal(12, 2) @default(0)
-  impressionCount  Int       @default(0)
-  clickCount       Int       @default(0)
-  clickThroughRate Decimal  @db.Decimal(5, 2) @default(0)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  budget           Decimal           @PostgreSQL.Decimal(12, 2)
+  spent            Decimal           @default(0) @PostgreSQL.Decimal(12, 2)
+  impressionCount  Int               @default(0)
+  clickCount       Int               @default(0)
+  clickThroughRate Decimal           @default(0) @PostgreSQL.Decimal(5, 2)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
-  @@ index([advertiserId])
-  @@ index([status])
-  @@ index([packageId])
+  advertiser Advertiser        @relation(fields: [advertiserId], references: [id])
+  package    AdvertisingPackage @relation(fields: [packageId], references: [id])
+
+  placements       CampaignPlacement[]
+  clickEvents      ClickEvent[]
+  impressionEvents ImpressionEvent[]
+  conversions      Conversion[]
+  invoices         Invoice[]
+
+  @@index([advertiserId])
+  @@index([status])
+  @@index([packageId])
+  @@index([startDate, endDate])
 }
 
 // ============================================
@@ -355,9 +388,8 @@ model Campaign {
 
 model CampaignPlacement {
   id          String    @id @default(uuid())
-  campaignId  String    @db.ForeignKey(Campaign)
-  campaign    Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  placement   String    // e.g., "homepage-banner", "featured-brand"
+  campaignId  String
+  placement   String
   position    Int?
   startDate   DateTime?
   endDate     DateTime?
@@ -365,6 +397,11 @@ model CampaignPlacement {
   clicks      Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@index([placement])
 }
 
 // ============================================
@@ -372,86 +409,95 @@ model CampaignPlacement {
 // ============================================
 
 model ClickEvent {
-  id             String    @id @default(uuid())
-  offerId        String?   @db.ForeignKey(Offer)
-  offer          Offer?    @relation(fields: [offerId], references: [id])
-  merchantId     String?   @db.ForeignKey(Merchant)
-  merchant       Merchant? @relation(fields: [merchantId], references: [id])
-  campaignId     String?   @db.ForeignKey(Campaign)
-  campaign       Campaign? @relation(fields: [campaignId], references: [id])
-  advertiserId   String?   @db.ForeignKey(Advertiser)
-  advertiser     Advertiser? @relation(fields: [advertiserId], references: [id])
-  userId         String?   @db.ForeignKey(User)
-  user           User?     @relation(fields: [userId], references: [id])
-  sessionId      String    // Anonymous session identifier
-  ipAddress      String?
-  userAgent      String?
-  deviceCategory String?   // "mobile", "desktop", "tablet"
-  landingPage    String
-  referralSource String?
-  timestamp      DateTime  @default(now())
+  id              String   @id @default(uuid())
+  offerId         String?
+  affiliateLinkId String?
+  merchantId      String?
+  campaignId      String?
+  advertiserId    String?
+  userId          String?
+  sessionId       String?
+  network         String?
+  ipAddress       String?
+  userAgent       String?
+  deviceCategory  String?
+  landingPage     String
+  referralSource  String?
+  timestamp       DateTime @default(now())
   affiliateParams Json?
 
-  @@ index([offerId])
-  @@ index([merchantId])
-  @@ index([campaignId])
-  @@ index([advertiserId])
-  @@ index([userId])
-  @@ index([timestamp])
+  offer        Offer?        @relation(fields: [offerId], references: [id])
+  affiliateLink AffiliateLink? @relation(fields: [affiliateLinkId], references: [id])
+  merchant     Merchant?     @relation(fields: [merchantId], references: [id])
+  campaign     Campaign?     @relation(fields: [campaignId], references: [id])
+  advertiser   Advertiser?   @relation(fields: [advertiserId], references: [id])
+  user         User?         @relation(fields: [userId], references: [id])
+
+  @@index([offerId])
+  @@index([affiliateLinkId])
+  @@index([merchantId])
+  @@index([campaignId])
+  @@index([advertiserId])
+  @@index([userId])
+  @@index([network])
+  @@index([timestamp])
 }
 
 model ImpressionEvent {
-  id             String    @id @default(uuid())
-  offerId        String?   @db.ForeignKey(Offer)
-  offer          Offer?    @relation(fields: [offerId], references: [id])
-  merchantId     String?   @db.ForeignKey(Merchant)
-  merchant       Merchant? @relation(fields: [merchantId], references: [id])
-  campaignId     String?   @db.ForeignKey(Campaign)
-  campaign       Campaign? @relation(fields: [campaignId], references: [id])
-  advertiserId   String?   @db.ForeignKey(Advertiser)
-  advertiser     Advertiser? @relation(fields: [advertiserId], references: [id])
-  sessionId      String    // Anonymous session identifier
+  id             String   @id @default(uuid())
+  offerId        String?
+  merchantId     String?
+  campaignId     String?
+  advertiserId   String?
+  sessionId      String
   ipAddress      String?
   userAgent      String?
-  deviceCategory String?   // "mobile", "desktop", "tablet"
+  deviceCategory String?
   placement      String?
   location       String?
-  timestamp      DateTime  @default(now())
+  timestamp      DateTime @default(now())
 
-  @@ index([offerId])
-  @@ index([merchantId])
-  @@ index([campaignId])
-  @@ index([advertiserId])
-  @@ index([timestamp])
+  offer      Offer?      @relation(fields: [offerId], references: [id])
+  merchant   Merchant?   @relation(fields: [merchantId], references: [id])
+  campaign   Campaign?   @relation(fields: [campaignId], references: [id])
+  advertiser Advertiser? @relation(fields: [advertiserId], references: [id])
+
+  @@index([offerId])
+  @@index([merchantId])
+  @@index([campaignId])
+  @@index([advertiserId])
+  @@index([timestamp])
 }
 
 model Conversion {
-  id               String    @id @default(uuid())
-  offerId          String?   @db.ForeignKey(Offer)
-  offer            Offer?    @relation(fields: [offerId], references: [id])
-  merchantId       String?   @db.ForeignKey(Merchant)
-  merchant         Merchant? @relation(fields: [merchantId], references: [id])
-  campaignId       String?   @db.ForeignKey(Campaign)
-  campaign         Campaign? @relation(fields: [campaignId], references: [id])
-  advertiserId     String?   @db.ForeignKey(Advertiser)
-  advertiser       Advertiser? @relation(fields: [advertiserId], references: [id])
-  userId           String?   @db.ForeignKey(User)
-  user             User?     @relation(fields: [userId], references: [id])
-  sessionId        String    // Anonymous session identifier
-  type             String    // "click", "view", "sale", "lead"
-  status           String    // "pending", "approved", "reversed", "paid"
-  reportedRevenue  Decimal   @db.Decimal(12, 2)
-  commissionRate   Decimal   @db.Decimal(8, 4)
-  timestamp        DateTime  @default(now())
-  transactionId    String?   // External network transaction ID
-  affiliateParams  Json?
+  id              String   @id @default(uuid())
+  offerId         String?
+  merchantId      String?
+  campaignId      String?
+  advertiserId    String?
+  userId          String?
+  sessionId       String
+  type            String
+  status          String
+  reportedRevenue Decimal  @PostgreSQL.Decimal(12, 2)
+  commissionRate  Decimal  @PostgreSQL.Decimal(8, 4)
+  timestamp       DateTime @default(now())
+  transactionId   String?
+  affiliateParams Json?
 
-  @@ index([offerId])
-  @@ index([merchantId])
-  @@ index([campaignId])
-  @@ index([advertiserId])
-  @@ index([status])
-  @@ index([timestamp])
+  offer      Offer?      @relation(fields: [offerId], references: [id])
+  merchant   Merchant?   @relation(fields: [merchantId], references: [id])
+  campaign   Campaign?   @relation(fields: [campaignId], references: [id])
+  advertiser Advertiser? @relation(fields: [advertiserId], references: [id])
+  user       User?       @relation(fields: [userId], references: [id])
+
+  @@index([offerId])
+  @@index([merchantId])
+  @@index([campaignId])
+  @@index([advertiserId])
+  @@index([userId])
+  @@index([status])
+  @@index([timestamp])
 }
 
 // ============================================
@@ -466,25 +512,27 @@ enum CommissionStatus {
 }
 
 model AffiliateCommission {
-  id               String    @id @default(uuid())
-  offerId          String    @db.ForeignKey(Offer)
-  offer            Offer       @relation(fields: [offerId], references: [id])
-  merchantId       String    @db.ForeignKey(Merchant)
-  merchant          Merchant    @relation(fields: [merchantId], references: [id])
-  advertiserId     String?   @db.ForeignKey(Advertiser)
-  advertiser        Advertiser? @relation(fields: [advertiserId], references: [id])
-  amount           Decimal    @db.Decimal(12, 2)
-  commissionRate   Decimal    @db.Decimal(8, 4)
+  id               String           @id @default(uuid())
+  offerId          String
+  merchantId       String
+  advertiserId     String?
+  amount           Decimal          @PostgreSQL.Decimal(12, 2)
+  commissionRate   Decimal          @PostgreSQL.Decimal(8, 4)
   status           CommissionStatus @default(PENDING)
-  networkReference String?   // Affiliate network transaction ID
+  networkReference String?
   approvedAt       DateTime?
   paidAt           DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
-  @@ index([offerId])
-  @@ index([merchantId])
-  @@ index([status])
+  offer      Offer       @relation(fields: [offerId], references: [id])
+  merchant   Merchant    @relation(fields: [merchantId], references: [id])
+  advertiser Advertiser? @relation(fields: [advertiserId], references: [id])
+
+  @@index([offerId])
+  @@index([merchantId])
+  @@index([advertiserId])
+  @@index([status])
 }
 
 // ============================================
@@ -492,43 +540,51 @@ model AffiliateCommission {
 // ============================================
 
 model Invoice {
-  id               String    @id @default(uuid())
-  advertiserId     String    @db.ForeignKey(Advertiser)
-  advertiser       Advertiser @relation(fields: [advertiserId], references: [id])
-  campaignId       String?   @db.ForeignKey(Campaign)
-  campaign         Campaign? @relation(fields: [campaignId], references: [id])
-  advertisingPackageId String? @db.ForeignKey(AdvertisingPackage)
-  advertisingPackage AdvertisingPackage? @relation(fields: [advertisingPackageId], references: [id])
-  amount           Decimal   @db.Decimal(12, 2)
-  currency         String    @default("USD")
-  status           String    // "pending", "paid", "overdue"
-  invoiceNumber    String    @unique
-  issueDate        DateTime  @default(now())
-  dueDate          DateTime
-  paidDate         DateTime?
-  paymentMethod    String?
-  notes            String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                   String   @id @default(uuid())
+  advertiserId         String
+  campaignId           String?
+  advertisingPackageId String?
+  amount               Decimal  @PostgreSQL.Decimal(12, 2)
+  currency             String   @default("USD")
+  status               String
+  invoiceNumber        String   @unique
+  issueDate            DateTime @default(now())
+  dueDate              DateTime
+  paidDate             DateTime?
+  paymentMethod        String?
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  @@ index([advertiserId])
-  @@ index([status])
-  @@ index([invoiceNumber])
+  advertiser        Advertiser         @relation(fields: [advertiserId], references: [id])
+  campaign          Campaign?          @relation(fields: [campaignId], references: [id])
+  advertisingPackage AdvertisingPackage? @relation(fields: [advertisingPackageId], references: [id])
+  payments          Payment[]
+
+  @@index([advertiserId])
+  @@index([campaignId])
+  @@index([advertisingPackageId])
+  @@index([status])
 }
 
-model Payment {
-  id               String    @id @default(uuid())
-  invoiceId        String    @db.ForeignKey(Invoice)
-  invoice          Invoice     @relation(fields: [invoiceId], references: [id])
-  amount           Decimal   @db.Decimal(12, 2)
-  paymentMethod    String
-  transactionId    String?   // External payment provider transaction ID
-  status           String    // "pending", "completed", "failed", "refunded"
-  paymentDate      DateTime  @default(now())
-  createdAt        DateTime  @default(now())
+// ============================================
+// PAYMENTS
+// ============================================
 
-  @@ index([invoiceId])
-  @@ index([status])
+model Payment {
+  id            String   @id @default(uuid())
+  invoiceId     String
+  amount        Decimal  @PostgreSQL.Decimal(12, 2)
+  paymentMethod String
+  transactionId String?
+  status        String
+  paymentDate   DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index([status])
 }
 
 // ============================================
@@ -536,34 +592,32 @@ model Payment {
 // ============================================
 
 model SiteSetting {
-  key              String    @id
-  value            String?
-  type             String    // "string", "boolean", "json"
-  updatedAt        DateTime  @updatedAt
-
-  @@ unique([key])
+  key       String   @id
+  value     String?
+  type      String
+  updatedAt DateTime @updatedAt
 }
 
 model NewsletterSubscriber {
-  id        String    @id @default(uuid())
-  email     String    @unique
+  id           String   @id @default(uuid())
+  email        String   @unique
   subscribedAt DateTime @default(now())
-  isActive   Boolean   @default(true)
-  source     String?   // "website", "widget", "campaign"
-  consent    Boolean   @default(true)
+  isActive     Boolean  @default(true)
+  source       String?
+  consent      Boolean  @default(true)
 }
 
 model ContactInquiry {
-  id        String    @id @default(uuid())
-  name      String
-  email     String
-  subject   String
-  message   String
-  status    String    // "new", "read", "replied", "resolved"
-  createdAt DateTime  @default(now())
+  id          String   @id @default(uuid())
+  name        String
+  email       String
+  subject     String
+  message     String
+  status      String
+  createdAt   DateTime @default(now())
   respondedAt DateTime?
 
-  @@ index([status])
+  @@index([status])
 }
 
 // ============================================
@@ -571,20 +625,20 @@ model ContactInquiry {
 // ============================================
 
 model AuditLog {
-  id               String    @id @default(uuid())
-  userId           String?   @db.ForeignKey(User)
-  user             User?     @relation(fields: [userId], references: [id])
-  action           String
-  resource         String    // e.g., "merchant", "offer", "campaign", "advertiser"
-  resourceId       String?
-  previousValue    Json?
-  newValue         Json?
-  ipAddress        String?
-  userAgent        String?
-  timestamp        DateTime  @default(now())
+  id            String   @id @default(uuid())
+  userId        String?
+  action        String
+  resource      String
+  resourceId    String?
+  previousValue Json?
+  newValue      Json?
+  ipAddress     String?
+  userAgent     String?
+  timestamp     DateTime @default(now())
 
-  @@ index([userId])
-  @@ index([timestamp])
-  @@ index([resource])
-  @@ index([timestamp, resource])
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([timestamp])
+  @@index([resource])
 }

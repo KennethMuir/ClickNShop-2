@@ -75,13 +75,13 @@ const offers: Offer[] = [
   },
   {
     id: "offer-6",
-    title: "Innovative tools",
+    title: "Camping cooking equipment",
     description:
-      "Fanttik innovative tools and electronic accessories.",
-    merchant: "Fanttik",
+      "Fire Maple Gear portable camping stoves, cookware and outdoor cooking equipment.",
+    merchant: "Fire Maple Gear",
     category: "Electronics & Technology",
-    destinationUrl: "/api/v1/go/fanttik",
-    clickCount: 32,
+    destinationUrl: "https://yazing.com/deals/firemaplegear/KennethMuiruri",
+    clickCount: 0,
   },
   {
     id: "offer-7",

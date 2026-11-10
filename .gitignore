@@ -43,3 +43,23 @@ logs/
 out/
 dist/
 !apps/web/package-lock.json
+
+# Local backups and temporary files
+backups/
+**/backups/
+*.bak
+qc
+query
+run.sql
+start
+startpg.bat
+temp_page.txt
+
+# Runtime logs
+stderr
+stdout
+
+# Keep API dependency lockfile
+!apps/api/package-lock.json
+
+*.bak-*
